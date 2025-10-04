@@ -1,6 +1,6 @@
 package com.example.todo
 
-import android.R
+
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -31,8 +31,6 @@ import androidx.compose.ui.graphics.Color
 import com.example.todo.ui.theme.TodoTheme
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.material3.TextField
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.unit.sp
@@ -40,7 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -92,13 +89,13 @@ fun Screen(modifier: Modifier) {
 @Composable
 fun StatelessComp(modifier: Modifier, viewModel: TaskViewModel) {
     val tasks       = viewModel.tasks                                 // reference to container of Tasks
-    var inputText   by remember { mutableStateOf("") }    // remember inputted text state
+    var inputText   by rememberSaveable { mutableStateOf("") }    // remember inputted text state
 
     Column(modifier = modifier) {
 
         Text("Todo List", fontSize = 32.sp)
 
-        AddTask(viewModel, inputText, { inputText = it } , modifier)
+        AddTask(viewModel, inputText, { inputText = it })
 
 
         when {
@@ -133,7 +130,7 @@ fun AddTask( // handles input field, and adds a Task object to the array
     viewModel: TaskViewModel,
     text : String,
     onTextChange: (String) -> Unit,
-    modifier: Modifier) {
+    ) {
 
     val context = LocalContext.current
 
