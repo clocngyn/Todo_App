@@ -39,6 +39,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.TaskStackBuilder
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -82,20 +83,43 @@ class TaskViewModel : ViewModel() {
 }
 @Composable
 fun Screen(modifier: Modifier) {
-    val viewModel: TaskViewModel = viewModel() // create and pass viewmodel
-    StatelessComp(modifier, viewModel)
+    val viewModel: TaskViewModel = viewModel()                              // create and pass viewmodel
+    val tasks = viewModel.tasks                                             // reference to container of Tasks
+    var inputText by rememberSaveable { mutableStateOf("") }        // remember inputted text state
+
+    StatelessComp(
+        modifier,
+        viewModel,
+        tasks,
+        inputText,
+        inputTextSetter = {inputText = it},
+        insertTask      = { viewModel.insertTask(it) },
+        deleteTask      = { viewModel.deleteTask(it) },
+        updateTask      = { task, index, isChecked ->
+            viewModel.updateTask(task, index, isChecked )
+        }
+    )
 }
 
 @Composable
-fun StatelessComp(modifier: Modifier, viewModel: TaskViewModel) {
-    val tasks       = viewModel.tasks                                       // reference to container of Tasks
-    var inputText   by rememberSaveable { mutableStateOf("") }      // remember inputted text state
+fun StatelessComp(
+    modifier: Modifier,
+    viewModel: TaskViewModel,
+    tasks : List<Task>,
+    inputText : String,
+    inputTextSetter:    (String) -> Unit,
+    insertTask:         (Task) -> Unit,
+    deleteTask:         (Task) -> Unit,
+    updateTask:         (Task, Int, Boolean) -> Unit
+
+) {
+
 
     Column(modifier = modifier) {
 
         Text("Todo List", fontSize = 32.sp)
 
-        AddTask(viewModel, inputText, { inputText = it })
+        AddTask(viewModel, inputText, inputTextSetter, insertTask)
 
 
         when {
@@ -111,14 +135,14 @@ fun StatelessComp(modifier: Modifier, viewModel: TaskViewModel) {
 
 
         for (task in tasks) {
-            CreateItem(viewModel, task, false)
+            CreateItem(viewModel, task, false, deleteTask, updateTask)
         }
 
         if (tasks.any { it.isCompleted }) { // if there is at least 1 completed item, show text
             Text("Completed Items", fontSize = 32.sp)
 
             for (task in tasks) {
-                CreateItem(viewModel, task, true)
+                CreateItem(viewModel, task, true, deleteTask, updateTask)
             }
         }
     }
@@ -129,7 +153,8 @@ fun StatelessComp(modifier: Modifier, viewModel: TaskViewModel) {
 fun AddTask( // handles input field, and adds a Task object to the array
     viewModel: TaskViewModel,
     text : String,
-    onTextChange: (String) -> Unit,
+    inputTextSetter: (String) -> Unit,
+    insertTask:         (Task) -> Unit,
     ) {
 
     val context = LocalContext.current
@@ -138,7 +163,7 @@ fun AddTask( // handles input field, and adds a Task object to the array
 
         TextField(
             value = text,
-            onValueChange = onTextChange,
+            onValueChange = inputTextSetter,
             label = { Text("Enter task") },
             modifier = Modifier
                 .padding(10.dp)
@@ -152,8 +177,8 @@ fun AddTask( // handles input field, and adds a Task object to the array
             val trimmed = text.trim() // get rid of whitespace
             if (trimmed.isNotBlank()) { // check if the task is blank
                 //println("success")
-                viewModel.insertTask(Task(name = trimmed)) // add a new Task object to array, isCompleted attribute is false by default
-                onTextChange("")
+                insertTask(Task(name = trimmed)) // add a new Task object to array, isCompleted attribute is false by default
+                inputTextSetter("")
 
             } else { // if it is blank, make a toast
                 Toast.makeText(context, "No input", Toast.LENGTH_SHORT).show()
@@ -171,7 +196,10 @@ fun AddTask( // handles input field, and adds a Task object to the array
 fun CreateItem(             // Creates an Item on screen using a Task object
     viewModel: TaskViewModel,
     task: Task,
-    completed : Boolean) {
+    completed : Boolean,
+    deleteTask:         (Task) -> Unit,
+    updateTask:         (Task, Int, Boolean) -> Unit
+) {
 
     if (completed != task.isCompleted) return // if the task is out of place, return since we will use this function twice for completed and incompleted tasks
     val index = viewModel.tasks.indexOf(task)
@@ -193,11 +221,11 @@ fun CreateItem(             // Creates an Item on screen using a Task object
         Checkbox(                   // changes isCompleted attribute of Task to isChecked
             checked = task.isCompleted,
             onCheckedChange = { isChecked ->
-                viewModel.updateTask(task, index, isChecked)
+                updateTask(task, index, isChecked)
             }
         )
 
-        IconButton(onClick = { viewModel.deleteTask(task) }) { // removes Task object from our array
+        IconButton(onClick = { deleteTask(task) }) { // removes Task object from our array
             Icon(
                 imageVector = Icons.Default.Delete,
                 contentDescription = "Delete Task",
