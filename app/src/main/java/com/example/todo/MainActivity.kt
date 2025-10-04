@@ -88,8 +88,8 @@ fun Screen(modifier: Modifier) {
 
 @Composable
 fun StatelessComp(modifier: Modifier, viewModel: TaskViewModel) {
-    val tasks       = viewModel.tasks                                 // reference to container of Tasks
-    var inputText   by rememberSaveable { mutableStateOf("") }    // remember inputted text state
+    val tasks       = viewModel.tasks                                       // reference to container of Tasks
+    var inputText   by rememberSaveable { mutableStateOf("") }      // remember inputted text state
 
     Column(modifier = modifier) {
 
